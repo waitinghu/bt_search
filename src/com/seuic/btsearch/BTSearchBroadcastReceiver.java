@@ -11,16 +11,16 @@ import android.os.Handler;
 import android.os.Message;
 
 public class BTSearchBroadcastReceiver extends BroadcastReceiver {
-	
+
 	Handler handler;
 	public static int HEW_BT_DEVICE;
-	
+
 	@Override
 	public void onReceive(Context context, Intent intent) {
 		String action = intent.getAction();
 		SearchManager manager = SearchManager.getInstance(context);
-		if(handler == null) {
-			Handler handler = new Handler(manager);
+		if (handler == null) {
+			handler = new Handler(manager);
 		}
 		if (BluetoothDevice.ACTION_FOUND.equals(action)) {
 			BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);

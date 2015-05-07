@@ -5,6 +5,7 @@ import android.app.Fragment;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -22,9 +23,12 @@ import com.seuic.btsearch.SearchManager.OnNewDeviceAttactListener;
 
 public class BTSearchActivity extends Activity implements OnClickListener ,OnNewDeviceAttactListener{
 
-	private Button mBTsearch; 
+	private static final String TAG = "BTSearchActivity";
+	private Button mBTsearch;
+	private Button mStop;
 	private SearchManager manager;
 	private ListView mDeviceList;
+	private BTDeviceAdapt adapt;
 	
 	
 	@Override
@@ -32,17 +36,15 @@ public class BTSearchActivity extends Activity implements OnClickListener ,OnNew
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 
-		if (savedInstanceState == null) {
-			getFragmentManager().beginTransaction()
-					.add(R.id.container, new PlaceholderFragment()).commit();
-		}
-		mBTsearch = (Button) findViewById(R.id.btn_search);
-		if(mBTsearch != null) {
-			mBTsearch.setOnClickListener(this);
-		}
-		mDeviceList = (ListView) findViewById(R.id.bt_device_list);
-		mDeviceList.setAdapter(new BTDeviceAdapt());
 		manager = SearchManager.getInstance(this);
+		manager.setOnNewDeviceAttactListener(this);
+		mBTsearch = (Button) findViewById(R.id.btn_search);
+		mStop = (Button) findViewById(R.id.btn_stop);
+		mStop.setOnClickListener(this);
+		mBTsearch.setOnClickListener(this);
+		mDeviceList = (ListView) findViewById(R.id.bt_device_list);
+		adapt = new BTDeviceAdapt();
+		mDeviceList.setAdapter(adapt);
 	}
 
 	@Override
@@ -50,31 +52,32 @@ public class BTSearchActivity extends Activity implements OnClickListener ,OnNew
 		if(v.getId() == mBTsearch.getId()) {
 			manager.startSearch();
 		}
+		if(v.getId() == mStop.getId()) {
+			manager.stopSearch();
+		}
 	}
 	
 	public class BTDeviceAdapt extends BaseAdapter {
 
 		@Override
 		public int getCount() {
-			// TODO Auto-generated method stub
 			return manager.getDevices().size();
 		}
 
 		@Override
 		public Object getItem(int position) {
-			return manager.getDevices().get(position);
+			return position;
 		}
 
 		@Override
 		public long getItemId(int position) {
-			// TODO Auto-generated method stub
-			return 0;
+			return position;
 		}
 
 		@Override
 		public View getView(int position, View convertView, ViewGroup parent) {
 			
-			BluetoothDevice device = manager.getDevices().get(position);
+			final BluetoothDevice device = manager.getDevices().get(position);
 			
 			LayoutInflater inflater = LayoutInflater.from(getApplicationContext());
 		    View view = inflater.inflate(R.layout.device_list, null);
@@ -85,7 +88,7 @@ public class BTSearchActivity extends Activity implements OnClickListener ,OnNew
 		    
 		    Button bt = (Button) view.findViewById(R.id.bt_conn);
 		    
-		    if(manager.isDeviceConnect(device)) {
+		    if(!manager.isDevicesPaired(device)) {
 		    	bt.setText(R.string.disconnect);
 		    }else {
 		    	bt.setText(R.string.connect);
@@ -93,7 +96,7 @@ public class BTSearchActivity extends Activity implements OnClickListener ,OnNew
 		    bt.setOnClickListener(new OnClickListener() {
 				@Override
 				public void onClick(View v) {
-					
+					manager.doClick(device);
 				}
 			});
 		    
@@ -104,7 +107,10 @@ public class BTSearchActivity extends Activity implements OnClickListener ,OnNew
 	
 	@Override
 	public void onNewDeviceAttacted(BluetoothDevice device) {
-		
+		Log.d(TAG, device.toString());
+		if (adapt != null) {
+			adapt.notifyDataSetChanged();
+		}
 	}
 
 	@Override
@@ -114,7 +120,6 @@ public class BTSearchActivity extends Activity implements OnClickListener ,OnNew
 	
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
-
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.main, menu);
 		return true;
@@ -131,22 +136,4 @@ public class BTSearchActivity extends Activity implements OnClickListener ,OnNew
 		}
 		return super.onOptionsItemSelected(item);
 	}
-
-	/**
-	 * A placeholder fragment containing a simple view.
-	 */
-	public static class PlaceholderFragment extends Fragment {
-
-		public PlaceholderFragment() {
-		}
-
-		@Override
-		public View onCreateView(LayoutInflater inflater, ViewGroup container,
-				Bundle savedInstanceState) {
-			View rootView = inflater.inflate(R.layout.fragment_main, container,
-					false);
-			return rootView;
-		}
-	}
-
 }
